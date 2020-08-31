@@ -234,6 +234,6 @@ class Attributee(metaclass=AttributeeMeta):
                 
         return serialized
 
-from attributee.privitives import Integer, Float, String, Boolean, Enumeration
+from attributee.privitives import Integer, Float, String, Boolean, Enumeration, Primitive
 from attributee.object import Object, Callable
-from attributee.containers import List, Map
+from attributee.containers import List, Map, Tuple

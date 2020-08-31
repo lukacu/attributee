@@ -2,7 +2,7 @@
 import inspect
 from enum import Enum
 
-from attributee import Attribute
+from attributee import Attribute, AttributeException
 
 def to_string(n):
     if n is None:
@@ -16,14 +16,14 @@ def to_number(val, max_n = None, min_n = None, conversion=int):
 
         if not max_n is None:
             if n > max_n:
-                raise RuntimeError("Parameter higher than maximum allowed value ({}>{})".format(n, max_n))
+                raise AttributeException("Parameter higher than maximum allowed value ({}>{})".format(n, max_n))
         if not min_n is None:
             if n < min_n:
-                raise RuntimeError("Parameter lower than minimum allowed value ({}<{})".format(n, min_n))
+                raise AttributeException("Parameter lower than minimum allowed value ({}<{})".format(n, min_n))
 
         return n
     except ValueError:
-        raise RuntimeError("Number conversion error")
+        raise AttributeException("Number conversion error")
 
 def to_logical(val):
     try:
@@ -33,7 +33,7 @@ def to_logical(val):
             return bool(val)
 
     except ValueError:
-        raise RuntimeError("Logical value conversion error")
+        raise AttributeException("Logical value conversion error")
 
 class Primitive(Attribute):
 

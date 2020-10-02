@@ -2,7 +2,7 @@
 import inspect
 from typing import Type
 
-from collections import Mapping
+from collections import Mapping, OrderedDict
 
 class AttributeException(Exception):
     pass
@@ -115,7 +115,7 @@ class Nested(Attribute):
 class AttributeeMeta(type):
 
     @staticmethod
-    def _get_fields(attrs: dict, pop=False):
+    def _get_fields(attrs: Mapping, pop=False):
         """Get fields from a class.
         :param attrs: Mapping of class attributes
         """
@@ -151,6 +151,9 @@ class AttributeeMeta(type):
             [],
         )
 
+    @classmethod
+    def __prepare__(self, name, bases):
+        return OrderedDict()
 
     def __new__(mcs, name, bases, attrs):
 
@@ -159,7 +162,7 @@ class AttributeeMeta(type):
         inherited_attributes = AttributeeMeta._get_fields_by_mro(klass)
 
         # Assign attributes on class
-        klass._declared_attributes = dict(inherited_attributes + cls_attributes)
+        klass._declared_attributes = OrderedDict(inherited_attributes + cls_attributes)
 
         return klass
 
@@ -202,9 +205,9 @@ class Attributee(metaclass=AttributeeMeta):
                     try:
                         super().__setattr__(aname, afield.coerce(avalue, {"parent": self}))
                     except AttributeException as ae:
-                        raise AttributeParseException(ae, aname)
+                        raise AttributeParseException(ae, aname) from ae
                     except AttributeError as ae:
-                        raise AttributeParseException(ae, aname)
+                        raise AttributeParseException(ae, aname) from ae
             unconsumed.difference_update([aname])
             unspecified.difference_update([aname])
 
@@ -223,9 +226,9 @@ class Attributee(metaclass=AttributeeMeta):
     def dump(self):
         attributes = getattr(self.__class__, "_declared_attributes", {})
         if attributes is None:
-            return dict()
+            return OrderedDict()
     
-        serialized = dict()
+        serialized = OrderedDict()
         for aname, afield in attributes.items():
             if isinstance(afield, Include):
                 serialized.update(afield.dump(getattr(self, aname, {})))

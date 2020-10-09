@@ -4,13 +4,20 @@ from enum import Enum
 
 from attributee import Attribute, AttributeException
 
+def _parse_number(value):
+    if isinstance(value, int) or isinstance(value, float):
+    try:
+        return int(value)
+    except ValueError:
+        return float(value)
+
 def to_string(n):
     if n is None:
         return ""
     else:
         return str(n)
 
-def to_number(val, max_n = None, min_n = None, conversion=int):
+def to_number(val, max_n = None, min_n = None, conversion=_parse_number):
     try:
         n = conversion(val)
 
@@ -22,8 +29,8 @@ def to_number(val, max_n = None, min_n = None, conversion=int):
                 raise AttributeException("Parameter lower than minimum allowed value ({}<{})".format(n, min_n))
 
         return n
-    except ValueError:
-        raise AttributeException("Number conversion error")
+    except ValueError as ve:
+        raise AttributeException("Number conversion error") from ve
 
 def to_logical(val):
     try:
@@ -32,8 +39,8 @@ def to_logical(val):
         else:
             return bool(val)
 
-    except ValueError:
-        raise AttributeException("Logical value conversion error")
+    except ValueError as ve:
+        raise AttributeException("Logical value conversion error") from ve
 
 class Primitive(Attribute):
 
@@ -43,7 +50,7 @@ class Primitive(Attribute):
 
 class Number(Attribute):
 
-    def __init__(self, conversion, val_min=None, val_max=None, **kwargs):
+    def __init__(self, conversion=_parse_number, val_min=None, val_max=None, **kwargs):
         self._conversion = conversion
         self._val_min = val_min
         self._val_max = val_max

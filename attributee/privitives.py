@@ -6,6 +6,7 @@ from attributee import Attribute, AttributeException
 
 def _parse_number(value):
     if isinstance(value, int) or isinstance(value, float):
+        return value
     try:
         return int(value)
     except ValueError:

@@ -108,4 +108,4 @@ class Enumeration(Attribute):
     def dump(self, value):
         return value.name
 
-__all__ = ["String", "Boolean", "Integer", "Float", "Enumeration"]
+__all__ = ["String", "Boolean", "Integer", "Float", "Enumeration", "Number"]

@@ -1,5 +1,6 @@
 
 import inspect
+import typing
 from enum import Enum
 
 from attributee import Attribute, AttributeException
@@ -94,16 +95,20 @@ class String(Attribute):
 
 class Enumeration(Attribute):
 
-    def __init__(self, enumclass,  **kwargs):
-        assert inspect.isclass(enumclass) and issubclass(enumclass, Enum)
-        self._enumclass = enumclass
+    def __init__(self, options,  **kwargs):
+        if inspect.isclass(options) and issubclass(options, Enum):
+            self._mapping = options
+        elif isinstance(options, typing.Mapping):
+            self._mapping = options
+        else:
+            raise AttributeException("Not an enum class or dictionary")
         super().__init__(**kwargs)
 
     def coerce(self, value, ctx):
-        if isinstance(value, self._enumclass):
-            return value
         if isinstance(value, str):
-            return self._enumclass[value.strip()]
+            return self._mapping[value.strip()]
+        if inspect.isclass(self._mapping) and isinstance(value, self._mapping):
+            return value
 
     def dump(self, value):
         return value.name

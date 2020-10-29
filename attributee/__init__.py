@@ -223,6 +223,11 @@ class Attributee(metaclass=AttributeeMeta):
             raise AttributeException("Attribute {} is readonly".format(key))
         super().__setattr__(key, value)
 
+    def _attributes(self):
+        from .containers import ReadonlyMapping
+        attributes = getattr(self.__class__, "_declared_attributes", {})
+        return ReadonlyMapping(attributes)
+
     def dump(self):
         attributes = getattr(self.__class__, "_declared_attributes", {})
         if attributes is None:

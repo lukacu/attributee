@@ -1,9 +1,12 @@
 
+import os
+import sys
 import typing
 import collections
+import argparse
 from functools import partial
 
-from attributee import Attributee
+from attributee import Attributee, AttributeException
 
 def _dump_serialized(obj: Attributee, handle: typing.Union[typing.IO[str], str], dumper: typing.Callable):
     data = obj.dump()
@@ -59,3 +62,51 @@ import json
 
 dump_json = partial(_dump_serialized, dumper=partial(json.dump))
 load_json = partial(_load_serialized, loader=partial(json.load, object_pairs_hook=collections.OrderedDict))
+
+class Entrypoint(Attributee):
+    """ Attributee base that is initialized from parsed command line arguments.
+
+    """
+
+    def __init__(self):
+        args = dict()
+
+        parser = argparse.ArgumentParser()
+
+        for name, _ in self._attributes().items():
+            parser.add_argument("--" + name, required=False)
+
+        args = parser.parse_args()
+
+        super().__init__(**vars(args))
+
+class Serializable(object):
+    """ A mixin that provides handy IO methods for Attributtee derived classes.
+
+    """
+
+    @classmethod
+    def read(cls, source: str):
+        if not issubclass(cls, Attributee):
+            raise AttributeException("Not a valid base class")
+        ext = os.path.splitext(source)[1].lower()
+        if ext in [".yml", ".yaml"]:
+            return load_yaml(source, cls)
+        if ext in [".json"]:
+            return load_json(source, cls)
+        else:
+            raise AttributeException("Unknown file format")
+
+
+    def write(self, destination: str):
+        if not isinstance(self, Attributee):
+            raise AttributeException("Not a valid base class")
+        ext = os.path.splitext(destination)[1].lower()
+        if ext in [".yml", ".yaml"]:
+            return dump_yaml(self, destination)
+        if ext in [".json"]:
+            return dump_json(self, destination)
+        else:
+            raise AttributeException("Unknown file format")
+
+

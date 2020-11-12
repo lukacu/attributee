@@ -6,7 +6,7 @@ import collections
 import argparse
 from functools import partial
 
-from attributee import Attributee, AttributeException
+from attributee import Attributee, AttributeException, is_undefined
 
 def _dump_serialized(obj: Attributee, handle: typing.Union[typing.IO[str], str], dumper: typing.Callable):
     data = obj.dump()
@@ -73,8 +73,11 @@ class Entrypoint(Attributee):
 
         parser = argparse.ArgumentParser()
 
-        for name, _ in self._attributes().items():
-            parser.add_argument("--" + name, required=False)
+        for name, attr in self._attributes().items():
+            if is_undefined(attr.default):
+                parser.add_argument("--" + name, required=True)
+            else:   
+                parser.add_argument("--" + name, required=False, default=attr.default)
 
         args = parser.parse_args()
 

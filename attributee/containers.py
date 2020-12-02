@@ -55,6 +55,10 @@ class Tuple(Attribute):
     def dump(self, value):
         return [t.dump(x) for x, t in zip(value, self._types)]
 
+    @property
+    def types(self):
+        return tuple(self._types)
+
 class List(Attribute):
 
     def __init__(self, contains, separator=",", **kwargs):
@@ -90,6 +94,10 @@ class List(Attribute):
 
     def dump(self, value):
         return [self._contains.dump(x) for x in value]
+
+    @property
+    def contains(self):
+        return self._contains
 
 class Map(Attribute):
 
@@ -127,3 +135,6 @@ class Map(Attribute):
     def dump(self, value):
         return {k: self._contains.dump(v) for k, v in value.items()}
 
+    @property
+    def contains(self):
+        return self._contains

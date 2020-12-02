@@ -45,8 +45,9 @@ def is_instance_or_subclass(val, class_) -> bool:
 
 class Attribute(object):
 
-    def __init__(self, default=Undefined()):
+    def __init__(self, default=Undefined(), description=""):
         self._default = default if is_undefined(default) else self.coerce(default, {})
+        self._description = description
 
     def coerce(self, value, _):
         return value
@@ -57,6 +58,10 @@ class Attribute(object):
     @property
     def default(self):
         return self._default
+
+    @property
+    def description(self):
+        return self._description
 
     @property
     def required(self):
@@ -223,9 +228,10 @@ class Attributee(metaclass=AttributeeMeta):
             raise AttributeException("Attribute {} is readonly".format(key))
         super().__setattr__(key, value)
 
-    def _attributes(self):
+    @classmethod
+    def attributes(cls):
         from .containers import ReadonlyMapping
-        attributes = getattr(self.__class__, "_declared_attributes", {})
+        attributes = getattr(cls, "_declared_attributes", {})
         return ReadonlyMapping(attributes)
 
     def dump(self):
@@ -241,6 +247,13 @@ class Attributee(metaclass=AttributeeMeta):
                 serialized[aname] = afield.dump(getattr(self, aname, afield.default))
                 
         return serialized
+
+    @classmethod
+    def list_attributes(cls):
+        references = []
+        for name, attr in cls.attributes().items():
+            references.append((name, attr))
+        return references
 
 from attributee.privitives import Integer, Float, String, Boolean, Enumeration, Primitive, Number
 from attributee.object import Object, Callable

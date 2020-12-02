@@ -79,7 +79,7 @@ class Entrypoint(Attributee):
 
         parser = argparse.ArgumentParser()
 
-        for name, attr in self._attributes().items():
+        for name, attr in self.attributes().items():
             if is_undefined(attr.default):
                 parser.add_argument("--" + name, required=True)
             else:   

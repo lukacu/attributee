@@ -64,6 +64,10 @@ class Object(Attribute):
         # This is only here to avoid pylint errors for the actual attribute field
         super().__setattr__(name, value)
 
+    @property
+    def subclass(self):
+        return self._subclass
+
 class Callable(Attribute):
 
     def __init__(self, **kwargs):

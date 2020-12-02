@@ -54,12 +54,20 @@ class Number(Attribute):
 
     def __init__(self, conversion=_parse_number, val_min=None, val_max=None, **kwargs):
         self._conversion = conversion
-        self._val_min = val_min
-        self._val_max = val_max
+        self._val_min = conversion(val_min) if val_min is not None else None
+        self._val_max = conversion(val_max) if val_max is not None else None
         super().__init__(**kwargs)
 
     def coerce(self, value, _=None):
         return to_number(value, max_n=self._val_max, min_n=self._val_min, conversion=self._conversion)
+
+    @property
+    def min(self):
+        return self._val_min
+
+    @property
+    def max(self):
+        return self._val_max
 
 class Integer(Number):
 
@@ -93,6 +101,10 @@ class String(Attribute):
         else:
             return self._transformer(to_string(value), ctx)
 
+    @property
+    def transformer(self):
+        return self._transformer
+
 class Enumeration(Attribute):
 
     def __init__(self, options,  **kwargs):
@@ -107,10 +119,20 @@ class Enumeration(Attribute):
     def coerce(self, value, ctx):
         if isinstance(value, str):
             return self._mapping[value.strip()]
-        if inspect.isclass(self._mapping) and isinstance(value, self._mapping):
+        elif inspect.isclass(self._mapping) and isinstance(value, self._mapping):
             return value
+        else:
+            raise AttributeException("Cannot parse enumeration")
 
     def dump(self, value):
         return value.name
+
+    @property
+    def options(self):
+        from .containers import ReadonlyMapping
+        if inspect.isclass(self._mapping) and issubclass(self._mapping, Enum):
+            return ReadonlyMapping([(e.value, e.name) for e in self._mapping])
+        elif isinstance(self._mapping, typing.Mapping):
+            return ReadonlyMapping(self._mapping) 
 
 __all__ = ["String", "Boolean", "Integer", "Float", "Enumeration", "Number"]

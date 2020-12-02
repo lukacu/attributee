@@ -55,6 +55,12 @@ try:
     load_yaml = partial(_load_serialized, loader=_yaml_load)
 
 except ImportError:
+
+    def _no_support():
+        raise ImportError("PyYAML not installed")
+
+    dump_yaml = lambda a, b: _no_support()
+    load_yaml = lambda a, b: _no_support()
     pass
 
 

@@ -193,26 +193,30 @@ class Attributee(metaclass=AttributeeMeta):
         unspecified = set(attributes.keys())
 
         for aname, afield in attributes.items():
-            if isinstance(afield, Include):
-                iargs = afield.filter(**kwargs)
-                super().__setattr__(aname, afield.coerce(iargs, {"parent": self}))
-                unconsumed.difference_update(iargs.keys())
-                unspecified.difference_update(iargs.keys())
-            else:
-                if not aname in kwargs:
-                    if not afield.required:
-                        avalue = afield.default
-                        super().__setattr__(aname, avalue)
-                    else:
-                        continue
+            try:
+                if isinstance(afield, Include):
+                    iargs = afield.filter(**kwargs)
+                    super().__setattr__(aname, afield.coerce(iargs, {"parent": self}))
+                    unconsumed.difference_update(iargs.keys())
+                    unspecified.difference_update(iargs.keys())
                 else:
-                    avalue = kwargs[aname]
-                    try:
-                        super().__setattr__(aname, afield.coerce(avalue, {"parent": self}))
-                    except AttributeException as ae:
-                        raise AttributeParseException(ae, aname) from ae
-                    except AttributeError as ae:
-                        raise AttributeParseException(ae, aname) from ae
+                    if not aname in kwargs:
+                        if not afield.required:
+                            avalue = afield.default
+                            super().__setattr__(aname, avalue)
+                        else:
+                            continue
+                    else:
+                        avalue = kwargs[aname]
+                        try:
+                            value = afield.coerce(avalue, {"parent": self})
+                            super().__setattr__(aname, value)
+                        except AttributeException as ae:
+                            raise AttributeParseException(ae, aname) from ae
+                        except AttributeError as ae:
+                            raise AttributeParseException(ae, aname) from ae
+            except AttributeError:
+                raise AttributeException("Illegal attribute name {}, already taken".format(aname))
             unconsumed.difference_update([aname])
             unspecified.difference_update([aname])
 

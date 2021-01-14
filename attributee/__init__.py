@@ -185,12 +185,17 @@ class Include(Nested):
 
 class Attributee(metaclass=AttributeeMeta):
 
-    def __init__(self, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__()
         attributes = getattr(self.__class__, "_declared_attributes", {})
 
         unconsumed = set(kwargs.keys())
         unspecified = set(attributes.keys())
+
+        for avalue, aname in zip(args, filter(lambda x: not isinstance(attributes[x], Include) and x not in kwargs, attributes.keys())):
+            if aname in kwargs:
+                raise AttributeException("Argument defined as positional and keyword: {}".format(aname))
+            kwargs[aname] = avalue
 
         for aname, afield in attributes.items():
             try:

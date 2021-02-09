@@ -6,7 +6,7 @@ import collections
 import argparse
 from functools import partial
 
-from attributee import Attributee, AttributeException, is_undefined
+from attributee import Attributee, AttributeException, is_undefined, Boolean
 
 def _dump_serialized(obj: Attributee, handle: typing.Union[typing.IO[str], str], dumper: typing.Callable):
     data = obj.dump()
@@ -69,25 +69,43 @@ import json
 dump_json = partial(_dump_serialized, dumper=partial(json.dump))
 load_json = partial(_load_serialized, loader=partial(json.load, object_pairs_hook=collections.OrderedDict))
 
-class Entrypoint(Attributee):
-    """ Attributee base that is initialized from parsed command line arguments.
+class Entrypoint(object):
+    """ A mixin that provides initialization of Attributee object using command line arguments.
 
     """
 
-    def __init__(self):
+    @classmethod
+    def parse(cls):
+        if not issubclass(cls, Attributee):
+            raise AttributeException("Not a valid base class")
+
         args = dict()
 
         parser = argparse.ArgumentParser()
 
-        for name, attr in self.attributes().items():
-            if is_undefined(attr.default):
-                parser.add_argument("--" + name, required=True)
-            else:   
-                parser.add_argument("--" + name, required=False, default=attr.default)
+        for name, attr in cls.attributes().items():
+            data = {}
+            if isinstance(attr, Boolean):
+                if not is_undefined(attr.default) and attr.default is True:
+                    data["action"] = "store_false"
+                    data["dest"] = name
+                    name = "not_" + name
+                else:
+                    data["action"] = "store_true"
+                data["required"] = False
+            elif not is_undefined(attr.default):
+                data["default"] = attr.default
+                data["required"] = False
+            else:
+                data["required"] = True
+            if attr.description is not None:
+                data["help"] = attr.description
+
+            parser.add_argument("--" + name, **data)
 
         args = parser.parse_args()
 
-        super().__init__(**vars(args))
+        return cls(**vars(args))
 
 class Serializable(object):
     """ A mixin that provides handy IO methods for Attributtee derived classes.

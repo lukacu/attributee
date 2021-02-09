@@ -243,13 +243,15 @@ class Attributee(metaclass=AttributeeMeta):
         attributes = getattr(cls, "_declared_attributes", {})
         return ReadonlyMapping(attributes)
 
-    def dump(self):
+    def dump(self, ignore=None):
         attributes = getattr(self.__class__, "_declared_attributes", {})
         if attributes is None:
             return OrderedDict()
     
         serialized = OrderedDict()
         for aname, afield in attributes.items():
+            if ignore is not None and aname in ignore:
+                continue
             if isinstance(afield, Include):
                 serialized.update(afield.dump(getattr(self, aname, {})))
             else:

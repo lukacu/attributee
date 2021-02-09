@@ -1,6 +1,7 @@
 
 import inspect
 import typing
+from collections import Mapping
 from enum import Enum
 
 from attributee import Attribute, AttributeException
@@ -110,7 +111,7 @@ class Enumeration(Attribute):
     def __init__(self, options,  **kwargs):
         if inspect.isclass(options) and issubclass(options, Enum):
             self._mapping = options
-        elif isinstance(options, typing.Mapping):
+        elif isinstance(options, Mapping):
             self._mapping = options
         else:
             raise AttributeException("Not an enum class or dictionary")

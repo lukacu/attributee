@@ -75,7 +75,18 @@ class Entrypoint(object):
     """
 
     @classmethod
-    def parse(cls):
+    def parse(cls, boolean_flags=True):
+        """[summary]
+
+        Args:
+            boolean_flags (bool, optional): [description]. Defaults to True.
+
+        Raises:
+            AttributeException: [description]
+
+        Returns:
+            [type]: [description]
+        """
         if not issubclass(cls, Attributee):
             raise AttributeException("Not a valid base class")
 
@@ -85,7 +96,7 @@ class Entrypoint(object):
 
         for name, attr in cls.attributes().items():
             data = {}
-            if isinstance(attr, Boolean):
+            if isinstance(attr, Boolean) and boolean_flags:
                 if not is_undefined(attr.default) and attr.default is True:
                     data["action"] = "store_false"
                     data["dest"] = name

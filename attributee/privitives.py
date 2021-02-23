@@ -119,7 +119,10 @@ class Enumeration(Attribute):
 
     def coerce(self, value, ctx):
         if isinstance(value, str):
-            return self._mapping[value.strip()]
+            if inspect.isclass(self._mapping) and issubclass(self._mapping, Enum):
+                return self._mapping(value.strip())
+            else:
+                return self._mapping[value.strip()]
         elif inspect.isclass(self._mapping) and isinstance(value, self._mapping):
             return value
         else:

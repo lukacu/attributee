@@ -75,7 +75,7 @@ class Entrypoint(object):
     """
 
     @classmethod
-    def parse(cls, boolean_flags=True):
+    def parse(cls, boolean_flags=None):
         """[summary]
 
         Args:
@@ -89,6 +89,9 @@ class Entrypoint(object):
         """
         if not issubclass(cls, Attributee):
             raise AttributeException("Not a valid base class")
+
+        if boolean_flags is None:
+            boolean_flags = os.environ.get("ATTIRBUTEE_ARGPARSE_BOOLEAN", "false").lower() in ("true", "1")
 
         args = dict()
 

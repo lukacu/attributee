@@ -267,5 +267,5 @@ class Attributee(metaclass=AttributeeMeta):
         return references
 
 from attributee.primitives import Integer, Float, String, Boolean, Enumeration, Primitive, Number
-from attributee.object import Object, Callable
+from attributee.object import Object, Callable, Date, Datetime
 from attributee.containers import List, Map, Tuple

@@ -1,5 +1,6 @@
 
 import inspect
+from datetime import datetime, date
 
 from attributee import Attributee, Attribute, AttributeException
 
@@ -93,3 +94,46 @@ class Callable(Attribute):
     def __call__(self):
         # This is only here to avoid pylint errors for the actual attribute field
         raise NotImplementedError
+
+class Datetime(Attribute):
+
+    def coerce(self, value, _):
+        if isinstance(value, datetime):
+            return value
+        if isinstance(value, date):
+            return datetime.combine(value.today(), datetime.min.time())
+        elif isinstance(value, str):
+            try:
+                import dateutil.parser
+                return dateutil.parser.parse(value)
+            except ImportError:
+                return datetime.strptime(value, "%Y-%m-%dT%H:%M:%S%z")
+        elif isinstance(value, (int, float)):
+            return datetime.utcfromtimestamp(value)
+        else:
+            raise AttributeException("Unable to parse datetime")
+
+    def dump(self, value):
+        return value
+
+
+class Date(Attribute):
+
+    def coerce(self, value, _):
+        if isinstance(value, date):
+            return value
+        if isinstance(value, date):
+            return value.today()
+        elif isinstance(value, str):
+            try:
+                import dateutil.parser
+                return dateutil.parser.parse(value)
+            except ImportError:
+                return datetime.strptime(value, "%Y-%m-%d").today()
+        elif isinstance(value, (int, float)):
+            return datetime.utcfromtimestamp(value).today()
+        else:
+            raise AttributeException("Unable to parse datetime")
+
+    def dump(self, value):
+        return value

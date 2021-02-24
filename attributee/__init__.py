@@ -266,6 +266,6 @@ class Attributee(metaclass=AttributeeMeta):
             references.append((name, attr))
         return references
 
-from attributee.privitives import Integer, Float, String, Boolean, Enumeration, Primitive, Number
+from attributee.primitives import Integer, Float, String, Boolean, Enumeration, Primitive, Number
 from attributee.object import Object, Callable
 from attributee.containers import List, Map, Tuple

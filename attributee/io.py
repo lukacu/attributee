@@ -6,7 +6,7 @@ import collections
 import argparse
 from functools import partial
 
-from attributee import Attributee, AttributeException, is_undefined, Boolean
+from attributee import Attributee, AttributeException, Include, is_undefined, Boolean, Nested
 
 def _dump_serialized(obj: Attributee, handle: typing.Union[typing.IO[str], str], dumper: typing.Callable):
     data = obj.dump()
@@ -22,7 +22,7 @@ def _load_serialized(handle: typing.Union[typing.IO[str], str], factory: typing.
         with open(handle, "r") as stream:
             data = loader(stream)
     else:
-        data = loader(stream)
+        data = loader(handle)
 
     return factory(**data)
 
@@ -69,6 +69,71 @@ import json
 dump_json = partial(_dump_serialized, dumper=partial(json.dump))
 load_json = partial(_load_serialized, loader=partial(json.load, object_pairs_hook=collections.OrderedDict))
 
+
+
+
+class _StorePrefix(argparse.Action):
+
+    def __init__(self,
+                 option_strings,
+                 dest,
+                 nargs=None,
+                 const=None,
+                 default=None,
+                 type=None,
+                 choices=None,
+                 required=False,
+                 help=None,
+                 metavar=None):
+        super().__init__(
+            option_strings=option_strings,
+            dest=dest,
+            nargs=nargs,
+            const=const,
+            default=default,
+            type=type,
+            choices=choices,
+            required=required,
+            help=help,
+            metavar=metavar)
+ 
+    def __call__(self, parser, namespace, values, option_string=None):
+        path = self.dest.split(".")
+        if len(path) > 1:
+            container = getattr(namespace, path[0], {})
+            for key in path[1:-1]:
+                container = container.setdefault(key, {})
+            container[path[-1]] = values
+            values = container
+            dest = path[0]
+        else:
+            dest = self.dest
+        setattr(namespace, dest, values)
+
+class _StoreTrueAction(_StorePrefix):
+    
+    def __init__(self, option_strings, dest, default=None, required=False, help=None, metavar=None):
+        super().__init__(
+            option_strings=option_strings,
+            dest=dest,
+            nargs=0,
+            const=True,
+            default=default,
+            required=required,
+            help=help)
+
+class _StoreFalseAction(_StorePrefix):
+
+    def __init__(self, option_strings, dest, default=None, required=False, help=None, metavar=None):
+        super().__init__(
+            option_strings=option_strings,
+            dest=dest,
+            nargs=0,
+            const=False,
+            default=default,
+            required=required,
+            help=help)
+
 class Entrypoint(object):
     """ A mixin that provides initialization of Attributee object using command line arguments.
 
@@ -91,33 +156,49 @@ class Entrypoint(object):
             raise AttributeException("Not a valid base class")
 
         if boolean_flags is None:
-            boolean_flags = os.environ.get("ATTIRBUTEE_ARGPARSE_BOOLEAN", "false").lower() in ("true", "1")
+            boolean_flags = not os.environ.get("ATTIRBUTEE_ARGPARSE_BOOLEAN", "false").lower() in ("true", "1")
 
         args = dict()
 
-        parser = argparse.ArgumentParser()
+        parser = argparse.ArgumentParser(conflict_handler='resolve')
 
-        for name, attr in cls.attributes().items():
-            data = {}
-            if isinstance(attr, Boolean) and boolean_flags:
-                if not is_undefined(attr.default) and attr.default is True:
-                    data["action"] = "store_false"
-                    data["dest"] = name
-                    name = "not_" + name
+        def add_arguments(parser: argparse.ArgumentParser, attributes, prefixes = None):
+            for name, attr in attributes.items():
+                data = {}
+                
+                prefix = "" if prefixes is None else ".".join(prefixes) + "."
+                data["action"] = _StorePrefix
+                data["dest"] = prefix + name
+                data["default"] = argparse.SUPPRESS
+
+                if isinstance(attr, Nested):
+                    if isinstance(attr, Include):
+                        add_arguments(parser, attr.attributes(), prefixes)
+                    else:
+                        prefixes = [name] if prefixes is None else prefixes + [name]
+                        add_arguments(parser, attr.attributes(), prefixes)
+                    continue
+                elif isinstance(attr, Boolean) and boolean_flags:
+                    if not is_undefined(attr.default) and attr.default is True:
+                        data["action"] = _StoreFalseAction
+                        name = "not_" + name
+                    else:
+                        data["action"] = _StoreTrueAction
+                    data["required"] = False
+                elif not is_undefined(attr.default):
+                    data["required"] = False
                 else:
-                    data["action"] = "store_true"
-                data["required"] = False
-            elif not is_undefined(attr.default):
-                data["default"] = attr.default
-                data["required"] = False
-            else:
-                data["required"] = True
-            if attr.description is not None:
-                data["help"] = attr.description
+                    data["required"] = True
+                if attr.description is not None:
+                    data["help"] = attr.description
 
-            parser.add_argument("--" + name, **data)
+                parser.add_argument("--" + prefix + name, **data)
+
+        add_arguments(parser, cls.attributes())
 
         args = parser.parse_args()
+
+        print(vars(args))
 
         return cls(**vars(args))
 

@@ -105,6 +105,9 @@ class Nested(Attribute):
             return None
         return value.dump()
 
+    def attributes(self):
+        return self._acls.attributes()
+
     @property
     def required(self):
         return super().required and self._required
@@ -261,10 +264,8 @@ class Attributee(metaclass=AttributeeMeta):
 
     @classmethod
     def list_attributes(cls):
-        references = []
         for name, attr in cls.attributes().items():
-            references.append((name, attr))
-        return references
+            yield (name, attr)
 
 from attributee.primitives import Integer, Float, String, Boolean, Enumeration, Primitive, Number
 from attributee.object import Object, Callable, Date, Datetime

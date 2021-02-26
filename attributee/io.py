@@ -198,8 +198,6 @@ class Entrypoint(object):
 
         args = parser.parse_args()
 
-        print(vars(args))
-
         return cls(**vars(args))
 
 class Serializable(object):

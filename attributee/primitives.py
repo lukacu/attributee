@@ -48,7 +48,7 @@ def to_logical(val):
 class Primitive(Attribute):
 
     def coerce(self, value, _):
-        assert isinstance(value, (str, int, bool, float))
+        assert value is None or isinstance(value, (str, int, bool, float))
         return value
 
 class Number(Attribute):
@@ -129,7 +129,7 @@ class Enumeration(Attribute):
             raise AttributeException("Cannot parse enumeration")
 
     def dump(self, value):
-        return value.name
+        return value.value
 
     @property
     def options(self):

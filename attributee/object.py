@@ -1,6 +1,7 @@
 
 import inspect
 from datetime import datetime, date
+from typing import Mapping
 
 from attributee import Attributee, Attribute, AttributeException
 
@@ -44,7 +45,7 @@ class Object(Attribute):
         self._subclass = subclass
 
     def coerce(self, value, context=None):
-        assert isinstance(value, dict)
+        assert isinstance(value, Mapping)
         class_name = value.get("type", None)
         obj = self._resolver(class_name, context, **{k: v for k, v in value.items() if not k == "type"})
         if not self._subclass is None:

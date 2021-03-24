@@ -113,6 +113,7 @@ class Enumeration(Attribute):
             self._mapping = options
         elif isinstance(options, Mapping):
             self._mapping = options
+            self._inverse = {v: k for k, v in options.items()}
         else:
             raise AttributeException("Not an enum class or dictionary")
         super().__init__(**kwargs)
@@ -126,10 +127,13 @@ class Enumeration(Attribute):
         elif inspect.isclass(self._mapping) and isinstance(value, self._mapping):
             return value
         else:
-            raise AttributeException("Cannot parse enumeration")
+            raise AttributeException("Cannot parse enumeration: {}".format(value))
 
     def dump(self, value):
-        return value.value
+        if inspect.isclass(self._mapping) and isinstance(value, self._mapping):
+            return value.value
+        else:
+            return self._inverse[value]
 
     @property
     def options(self):

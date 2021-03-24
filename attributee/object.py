@@ -79,9 +79,11 @@ class Callable(Attribute):
         if callable(value):
             return value
 
-        assert isinstance(value, str)
+        if not isinstance(value, str):
+            raise AttributeError("Input is not a string")
         caltype = import_class(value)
-        assert callable(caltype)
+        if not callable(caltype):
+            raise AttributeError("Resolved type not callable: {}".format(value))
         caltype.resname = value
         return caltype
 

@@ -14,7 +14,7 @@ class AttributeParseException(AttributeException):
             self._keys.extend(cause._keys)
             cause = cause.__cause__ or cause.__context__
         super().__init__(cause)
-        self._keys.append(key)
+        self._keys.insert(0, key)
  
     def __str__(self):
         return "Attribute error: {}".format(".".join(self._keys))

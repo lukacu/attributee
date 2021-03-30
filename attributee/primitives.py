@@ -119,11 +119,11 @@ class Enumeration(Attribute):
         super().__init__(**kwargs)
 
     def coerce(self, value, ctx):
-        if isinstance(value, str):
+        if isinstance(value, (str, int, float)):
             if inspect.isclass(self._mapping) and issubclass(self._mapping, Enum):
-                return self._mapping(value.strip())
+                return self._mapping(value)
             else:
-                return self._mapping[value.strip()]
+                return self._mapping[value]
         elif inspect.isclass(self._mapping) and isinstance(value, self._mapping):
             return value
         else:

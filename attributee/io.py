@@ -97,7 +97,7 @@ class _StorePrefix(argparse.Action):
             help=help,
             metavar=metavar)
  
-    def __call__(self, parser, namespace, values, option_string=None):
+    def _route_dest(self, namespace, values):
         path = self.dest.split(".")
         if len(path) > 1:
             container = getattr(namespace, path[0], {})
@@ -109,6 +109,9 @@ class _StorePrefix(argparse.Action):
         else:
             dest = self.dest
         setattr(namespace, dest, values)
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        self._route_dest(namespace, values)
 
 class _StoreTrueAction(_StorePrefix):
     
@@ -122,6 +125,9 @@ class _StoreTrueAction(_StorePrefix):
             required=required,
             help=help)
 
+    def __call__(self, parser, namespace, values, option_string=None):
+        self._route_dest(namespace, self.const)
+
 class _StoreFalseAction(_StorePrefix):
 
     def __init__(self, option_strings, dest, default=None, required=False, help=None, metavar=None):
@@ -133,6 +139,9 @@ class _StoreFalseAction(_StorePrefix):
             default=default,
             required=required,
             help=help)
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        self._route_dest(namespace, self.const)
 
 class Entrypoint(object):
     """ A mixin that provides initialization of Attributee object using command line arguments.

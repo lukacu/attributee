@@ -1,6 +1,6 @@
 
 import inspect
-from typing import Type
+from typing import Type, Union
 
 from collections import Mapping, OrderedDict
 
@@ -73,16 +73,17 @@ class Any(Attribute):
 
 class Nested(Attribute):
 
-    def __init__(self, acls: Type["Attributee"], override: Mapping = None, **kwargs):
+    def __init__(self, acls: Type["Attributee"], override: Mapping = None, create: bool = True, **kwargs):
         if not issubclass(acls, Attributee):
             raise AttributeException("Illegal base class {}".format(acls))
 
         self._acls = acls
         self._override = dict(override.items() if not override is None else [])
+        self._create = create
         if "default" not in kwargs:
             self._required = False
 
-            for _, afield in getattr(acls, "_declared_attributes", {}).items():
+            for _, afield in acls.list_attributes():
                 if afield.required:
                     self._required = True
             if not self._required:
@@ -98,12 +99,18 @@ class Nested(Attribute):
         assert isinstance(value, Mapping)
         kwargs = dict(value.items())
         kwargs.update(self._override)
-        return self._acls(**kwargs)
+        if self._create:
+            return self._acls(**kwargs)
+        else:
+            return kwargs
 
-    def dump(self, value: "Attributee"):
+    def dump(self, value: Union["Attributee", Mapping]):
         if value is None:
             return None
-        return value.dump()
+        if self._create:
+            return value.dump()
+        else:
+            return value
 
     def attributes(self):
         return self._acls.attributes()
@@ -119,6 +126,7 @@ class Nested(Attribute):
     def __setattr__(self, name, value):
         # This is only here to avoid pylint errors for the actual attribute field
         super().__setattr__(name, value)
+
 
 class AttributeeMeta(type):
 
@@ -177,7 +185,7 @@ class AttributeeMeta(type):
 class Include(Nested):
 
     def filter(self, **kwargs):
-        attributes = getattr(self._acls, "_declared_attributes", {})
+        attributes = self._acls.attributes()
         filtered = dict()
         for aname, afield in attributes.items():
             if isinstance(afield, Include):
@@ -187,8 +195,18 @@ class Include(Nested):
         return filtered
 
 class Attributee(metaclass=AttributeeMeta):
+    """Base class for all objects that utilize declarative initialization.
+
+    """
 
     def __init__(self, *args, **kwargs):
+        """Base constructor, should be called by sublasses. It is important that you pass all unhandled arguments to
+        it to use the functionalities properly.
+
+        Raises:
+            AttributeException: [description]
+            AttributeParseException: [description]
+        """
         super().__init__()
         attributes = getattr(self.__class__, "_declared_attributes", {})
 
@@ -247,7 +265,7 @@ class Attributee(metaclass=AttributeeMeta):
         return ReadonlyMapping(attributes)
 
     def dump(self, ignore=None):
-        attributes = getattr(self.__class__, "_declared_attributes", {})
+        attributes = self.__class__.attributes()
         if attributes is None:
             return OrderedDict()
     

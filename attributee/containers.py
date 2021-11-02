@@ -2,7 +2,7 @@
 
 from collections import Iterable, Mapping
 
-from attributee import Attribute, AttributeException
+from attributee import Attribute, AttributeException, CoerceContext
 
 class ReadonlyMapping(Mapping):
 
@@ -36,9 +36,8 @@ class Tuple(Attribute):
             value = value.values()
         if not isinstance(value, Iterable):
             raise AttributeException("Unable to value convert to list")
-        if context is None:
-            context = dict()
-        return [t.coerce(x, dict(key=i)) for i, (x, t) in enumerate(zip(value, self._types))]
+        parent = context.parent if context is not None else None
+        return [t.coerce(x, CoerceContext(parent=parent, key=i)) for i, (x, t) in enumerate(zip(value, self._types))]
 
     def __iter__(self):
         # This is only here to avoid pylint errors for the actual attribute field
@@ -62,7 +61,7 @@ class Tuple(Attribute):
 class List(Attribute):
 
     def __init__(self, contains, separator=",", **kwargs):
-        assert isinstance(contains, Attribute)
+        assert isinstance(contains, Attribute), "Container should be an Attribute object"
         self._separator = separator
         self._contains = contains
         super().__init__(**kwargs)
@@ -74,11 +73,8 @@ class List(Attribute):
             value = value.values()
         if not isinstance(value, Iterable):
             raise AttributeException("Unable to convert value to list")
-        if context is None:
-            context = dict()
-        else:
-            context = dict(**context)
-        return [self._contains.coerce(x, context) for i, x in enumerate(value)]
+        parent = context.parent if context is not None else None
+        return [self._contains.coerce(x, CoerceContext(parent=parent, key=i)) for i, x in enumerate(value)]
 
     def __iter__(self):
         # This is only here to avoid pylint errors for the actual attribute field
@@ -102,7 +98,7 @@ class List(Attribute):
 class Map(Attribute):
 
     def __init__(self, contains, container=dict, **kwargs):
-        assert isinstance(contains, Attribute)
+        assert isinstance(contains, Attribute), "Container should be an Attribute object"
         self._contains = contains
         self._container = container
         super().__init__(**kwargs)
@@ -111,13 +107,9 @@ class Map(Attribute):
         if not isinstance(value, Mapping):
             raise AttributeException("Unable to value convert to dict")
         container = self._container()
-        if context is None:
-            context = dict()
-        else:
-            context = dict(**context)
         for name, data in value.items():
-            context["key"] = name
-            container[name] = self._contains.coerce(data, context)
+            ctx = CoerceContext(parent=context.parent if context is not None else None, key=name)
+            container[name] = self._contains.coerce(data, ctx)
         return ReadonlyMapping(container)
 
     def __iter__(self):

@@ -17,12 +17,17 @@ def _dump_serialized(obj: Attributee, handle: typing.Union[typing.IO[str], str],
     else:
         dumper(data, handle)
 
-def _load_serialized(handle: typing.Union[typing.IO[str], str], factory: typing.Callable, loader: typing.Callable):
+def _load_serialized(handle: typing.Union[typing.IO[str], str], factory: typing.Callable, defaults: typing.Optional[typing.Mapping], loader: typing.Callable):
     if isinstance(handle, str):
         with open(handle, "r") as stream:
             data = loader(stream)
     else:
         data = loader(handle)
+
+    if defaults is not None:
+        for k, v in defaults.items():
+            if k not in data:
+                data[k] = v
 
     return factory(**data)
 
@@ -59,8 +64,8 @@ except ImportError:
     def _no_support():
         raise ImportError("PyYAML not installed")
 
-    dump_yaml = lambda a, b: _no_support()
-    load_yaml = lambda a, b: _no_support()
+    dump_yaml = lambda *arg: _no_support()
+    load_yaml = lambda *arg: _no_support()
     pass
 
 
@@ -215,14 +220,15 @@ class Serializable(object):
     """
 
     @classmethod
-    def read(cls, source: str):
+    def read(cls, source: str, defaults: typing.Optional[typing.Mapping] = None):
         if not issubclass(cls, Attributee):
             raise AttributeException("Not a valid base class")
         ext = os.path.splitext(source)[1].lower()
         if ext in [".yml", ".yaml"]:
-            return load_yaml(source, cls)
+            print(source, cls, defaults)
+            return load_yaml(source, cls, defaults)
         if ext in [".json"]:
-            return load_json(source, cls)
+            return load_json(source, cls, defaults)
         else:
             raise AttributeException("Unknown file format")
 

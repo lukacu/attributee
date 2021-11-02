@@ -1,6 +1,6 @@
 
 import inspect
-from typing import Type
+from typing import Any, Optional, Type
 
 from collections import Mapping, OrderedDict
 
@@ -27,6 +27,20 @@ def singleton(class_):
         return instances[class_]
     return getinstance
 
+class CoerceContext():
+
+    def __init__(self, parent: Optional["Attributee"] = None, key: Optional[Any] = None) -> None:
+        self._parent = parent
+        self._key = key
+
+    @property
+    def parent(self) -> Optional["Attributee"]:
+        return self._parent
+
+    @property
+    def key(self) -> Optional[Any]:
+        return self._key
+
 @singleton
 class Undefined():
     pass
@@ -46,10 +60,10 @@ def is_instance_or_subclass(val, class_) -> bool:
 class Attribute(object):
 
     def __init__(self, default=Undefined(), description=""):
-        self._default = default if is_undefined(default) else (None if default is None else self.coerce(default, {}))
+        self._default = default if is_undefined(default) else (None if default is None else self.coerce(default, CoerceContext()))
         self._description = description
 
-    def coerce(self, value, _):
+    def coerce(self, value, context: Optional[CoerceContext] = None):
         return value
 
     def dump(self, value):
@@ -95,7 +109,7 @@ class Nested(Attribute):
     def coerce(self, value, _):
         if value is None:
             return None
-        assert isinstance(value, Mapping)
+        assert isinstance(value, Mapping), "Only mapping accepted as an input"
         kwargs = dict(value.items())
         kwargs.update(self._override)
         return self._acls(**kwargs)
@@ -204,7 +218,7 @@ class Attributee(metaclass=AttributeeMeta):
             try:
                 if isinstance(afield, Include):
                     iargs = afield.filter(**kwargs)
-                    super().__setattr__(aname, afield.coerce(iargs, {"parent": self}))
+                    super().__setattr__(aname, afield.coerce(iargs, CoerceContext(parent=self)))
                     unconsumed.difference_update(iargs.keys())
                     unspecified.difference_update(iargs.keys())
                 else:
@@ -217,7 +231,7 @@ class Attributee(metaclass=AttributeeMeta):
                     else:
                         avalue = kwargs[aname]
                         try:
-                            value = afield.coerce(avalue, {"parent": self})
+                            value = afield.coerce(avalue, CoerceContext(parent=self))
                             super().__setattr__(aname, value)
                         except AttributeException as ae:
                             raise AttributeParseException(ae, aname) from ae

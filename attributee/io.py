@@ -225,7 +225,6 @@ class Serializable(object):
             raise AttributeException("Not a valid base class")
         ext = os.path.splitext(source)[1].lower()
         if ext in [".yml", ".yaml"]:
-            print(source, cls, defaults)
             return load_yaml(source, cls, defaults)
         if ext in [".json"]:
             return load_json(source, cls, defaults)

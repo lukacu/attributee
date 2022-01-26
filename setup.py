@@ -14,7 +14,7 @@ if isfile(join(this_directory, "requirements.txt")):
         install_requires = f.readlines()
 
 setup(name='attributee',
-    version="0.1.4",
+    version="0.1.5",
     description='Declarative object initialization library',
     long_description=long_description,
     long_description_content_type='text/markdown',

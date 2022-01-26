@@ -48,7 +48,8 @@ def to_logical(val):
 class Primitive(Attribute):
 
     def coerce(self, value, _):
-        assert value is None or isinstance(value, (str, int, bool, float))
+        if value is not None and not isinstance(value, (str, int, bool, float)):
+            raise AttributeException("Unbable to use a value as a primitive")
         return value
 
 class Number(Attribute):

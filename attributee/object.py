@@ -15,7 +15,7 @@ def class_fullname(o):
     return class_string(o.__class__)
 
 def class_string(kls):
-    assert inspect.isclass(kls)
+    if not inspect.isclass(kls): AttributeException("Input is not a class")
     module = kls.__module__
     if module is None or module == str.__class__.__module__:
         return kls.__name__  # Avoid reporting __builtin__
@@ -33,19 +33,19 @@ def default_object_resolver(typename: str, _, **kwargs) -> Attributee:
         Attributee -- An instance of the class
     """
     clstype = import_class(typename)
-    assert issubclass(clstype, Attributee)
+    if not issubclass(clstype, Attributee): raise AttributeException("Class {} is not an Attributee".format(typename))
     return clstype(**kwargs)
 
 class Object(Attribute):
 
     def __init__(self, resolver=default_object_resolver, subclass=None, **kwargs):
         super().__init__(**kwargs)
-        assert subclass is None or inspect.isclass(subclass)
+        if subclass is not None and not inspect.isclass(subclass): raise AttributeException("Subclass constraint should be a class type")
         self._resolver = resolver
         self._subclass = subclass
 
     def coerce(self, value, context=None):
-        assert isinstance(value, Mapping)
+        if not isinstance(value, Mapping): raise AttributeException("Value is not a key-value mapping")
         class_name = value.get("type", None)
         obj = self._resolver(class_name, context, **{k: v for k, v in value.items() if not k == "type"})
         if not self._subclass is None:

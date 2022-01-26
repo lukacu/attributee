@@ -61,7 +61,7 @@ class Tuple(Attribute):
 class List(Attribute):
 
     def __init__(self, contains, separator=",", **kwargs):
-        assert isinstance(contains, Attribute), "Container should be an Attribute object"
+        if not isinstance(contains, Attribute): raise AttributeException("Container should be an Attribute object")
         self._separator = separator
         self._contains = contains
         super().__init__(**kwargs)
@@ -98,7 +98,7 @@ class List(Attribute):
 class Map(Attribute):
 
     def __init__(self, contains, container=dict, **kwargs):
-        assert isinstance(contains, Attribute), "Container should be an Attribute object"
+        if not isinstance(contains, Attribute): raise AttributeException("Container should be an Attribute object")
         self._contains = contains
         self._container = container
         super().__init__(**kwargs)

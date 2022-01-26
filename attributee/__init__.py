@@ -83,7 +83,6 @@ class Attribute(object):
         return is_undefined(self._default)
 
 class Any(Attribute):
-
     pass
 
 class Nested(Attribute):
@@ -197,14 +196,19 @@ class AttributeeMeta(type):
 
         return klass
 
-class Include(Nested):
+class Collector(Attribute):
 
-    def filter(self, **kwargs):
+    def filter(self, object: "Attributee", **kwargs):
+        return {}
+
+class Include(Nested, Collector):
+
+    def filter(self, object: "Attributee", **kwargs):
         attributes = self._acls.attributes()
         filtered = dict()
         for aname, afield in attributes.items():
-            if isinstance(afield, Include):
-                filtered.update(afield.filter(**kwargs))
+            if isinstance(afield, Collector):
+                filtered.update(afield.filter(object, **kwargs))
             elif aname in kwargs:
                 filtered[aname] = kwargs[aname]
         return filtered
@@ -228,15 +232,15 @@ class Attributee(metaclass=AttributeeMeta):
         unconsumed = set(kwargs.keys())
         unspecified = set(attributes.keys())
 
-        for avalue, aname in zip(args, filter(lambda x: not isinstance(attributes[x], Include) and x not in kwargs, attributes.keys())):
+        for avalue, aname in zip(args, filter(lambda x: not isinstance(attributes[x], Collector) and x not in kwargs, attributes.keys())):
             if aname in kwargs:
                 raise AttributeException("Argument defined as positional and keyword: {}".format(aname))
             kwargs[aname] = avalue
 
         for aname, afield in attributes.items():
             try:
-                if isinstance(afield, Include):
-                    iargs = afield.filter(**kwargs)
+                if isinstance(afield, Collector):
+                    iargs = afield.filter(self, **kwargs)
                     super().__setattr__(aname, afield.coerce(iargs, CoerceContext(parent=self)))
                     unconsumed.difference_update(iargs.keys())
                     unspecified.difference_update(iargs.keys())
@@ -288,7 +292,7 @@ class Attributee(metaclass=AttributeeMeta):
         for aname, afield in attributes.items():
             if ignore is not None and aname in ignore:
                 continue
-            if isinstance(afield, Include):
+            if isinstance(afield, Collector):
                 serialized.update(afield.dump(getattr(self, aname, {})))
             else:
                 serialized[aname] = afield.dump(getattr(self, aname, afield.default))
@@ -299,6 +303,21 @@ class Attributee(metaclass=AttributeeMeta):
     def list_attributes(cls):
         for name, attr in cls.attributes().items():
             yield (name, attr)
+
+class Unclaimed(Collector):
+
+    def __init__(self, description=""):
+        super().__init__({}, description=description)
+
+    def filter(self, object: "Attributee", **kwargs):
+        attributes = object.attributes()
+        claimed = set()
+        for aname, afield in attributes.items():
+            if isinstance(afield, Collector) and not isinstance(afield, Unclaimed):
+                claimed.update(afield.filter(object, **kwargs).keys())
+            elif aname in kwargs:
+                claimed.add(aname)
+        return {k: v for k, v in kwargs.items() if k not in claimed}
 
 from attributee.primitives import Integer, Float, String, Boolean, Enumeration, Primitive, Number
 from attributee.object import Object, Callable, Date, Datetime

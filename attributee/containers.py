@@ -1,8 +1,52 @@
 
 
-from collections import Iterable, Mapping
+from collections import Iterable, Mapping, Sequence
 
 from attributee import Attribute, AttributeException, CoerceContext
+
+def _readonly(*args, **kwargs):
+    raise AttributeException("Content is readonly")
+
+class ReadonlySequence(Sequence):
+
+    def __init__(self, data):
+        self._data = data
+
+    def __getitem__(self, index):
+        return self._data[index]
+
+    def __len__(self):
+        return len(self._data)
+
+    def __iter__(self):
+        return iter(self._data)
+
+    append = _readonly
+    __add__ = _readonly
+    insert = _readonly
+    __setitem__ = _readonly
+
+class CoerceSequence(ReadonlySequence):
+
+    def __init__(self, data, parent, type):
+        super().__init__(data)
+        self._parent = parent
+        self._type = type
+
+    def append(self, item):
+        ctx = CoerceContext(parent=self._parent, key=len(self._data))
+        self._data.append(self._type.coerce(item, ctx))
+
+    def __add__(self, item):
+        self.append(item)
+
+    def insert(self, index, value):
+        ctx = CoerceContext(parent=self._parent, key=index)
+        self._data.insert(index, self._type.coerce(value, ctx))
+
+    def __setitem__(self, index, value):
+        ctx = CoerceContext(parent=self._parent, key=index)
+        self._data[index] = self._type.coerce(value, ctx)
 
 class ReadonlyMapping(Mapping):
 
@@ -17,6 +61,19 @@ class ReadonlyMapping(Mapping):
 
     def __iter__(self):
         return iter(self._data)
+
+    __setitem__ = _readonly
+
+class CoerceMapping(ReadonlyMapping):
+
+    def __init__(self, data, parent, type):
+        super().__init__(data)
+        self._parent = parent
+        self._type = type
+
+    def __setitem__(self, key, value):
+        ctx = CoerceContext(parent=self._parent, key=key)
+        self._data[key] = self._type.coerce(value, ctx)
 
 class Tuple(Attribute):
 
@@ -37,7 +94,7 @@ class Tuple(Attribute):
         if not isinstance(value, Iterable):
             raise AttributeException("Unable to value convert to list")
         parent = context.parent if context is not None else None
-        return [t.coerce(x, CoerceContext(parent=parent, key=i)) for i, (x, t) in enumerate(zip(value, self._types))]
+        return tuple([t.coerce(x, CoerceContext(parent=parent, key=i)) for i, (x, t) in enumerate(zip(value, self._types))])
 
     def __iter__(self):
         # This is only here to avoid pylint errors for the actual attribute field
@@ -52,7 +109,7 @@ class Tuple(Attribute):
         raise NotImplementedError
 
     def dump(self, value):
-        return [t.dump(x) for x, t in zip(value, self._types)]
+        return tuple([t.dump(x) for x, t in zip(value, self._types)])
 
     @property
     def types(self):
@@ -74,7 +131,11 @@ class List(Attribute):
         if not isinstance(value, Iterable):
             raise AttributeException("Unable to convert value to list")
         parent = context.parent if context is not None else None
-        return [self._contains.coerce(x, CoerceContext(parent=parent, key=i)) for i, x in enumerate(value)]
+        data = [self._contains.coerce(x, CoerceContext(parent=parent, key=i)) for i, x in enumerate(value)]
+        if self.readonly:
+            return ReadonlySequence(data)
+        else:
+            return CoerceSequence(data, self, self._contains)
 
     def __iter__(self):
         # This is only here to avoid pylint errors for the actual attribute field
@@ -110,7 +171,10 @@ class Map(Attribute):
         for name, data in value.items():
             ctx = CoerceContext(parent=context.parent if context is not None else None, key=name)
             container[name] = self._contains.coerce(data, ctx)
-        return ReadonlyMapping(container)
+        if self.readonly:
+            return ReadonlyMapping(container)
+        else:
+            return CoerceMapping(container, self, self._contains)
 
     def __iter__(self):
         # This is only here to avoid pylint errors for the actual attribute field

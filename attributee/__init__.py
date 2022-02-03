@@ -60,9 +60,10 @@ def is_instance_or_subclass(val, class_) -> bool:
 
 class Attribute(object):
 
-    def __init__(self, default=Undefined(), description=""):
+    def __init__(self, default=Undefined(), description="", readonly=False):
         self._default = default if is_undefined(default) else (None if default is None else self.coerce(default, CoerceContext()))
         self._description = description
+        self._readonly = readonly
 
     def coerce(self, value, context: Optional[CoerceContext] = None):
         return value
@@ -77,6 +78,10 @@ class Attribute(object):
     @property
     def description(self):
         return self._description
+
+    @property
+    def readonly(self):
+        return self._readonly
 
     @property
     def required(self):
@@ -274,7 +279,11 @@ class Attributee(metaclass=AttributeeMeta):
     def __setattr__(self, key, value):
         attributes = getattr(self.__class__, "_declared_attributes", {})
         if key in attributes:
-            raise AttributeException("Attribute {} is readonly".format(key))
+            if attributes[key].readonly:
+                raise AttributeException("Attribute {} is readonly".format(key))
+            else:
+                value = attributes[key].coerce(value, CoerceContext(parent=self))
+                super().__setattr__(key, value)
         super().__setattr__(key, value)
 
     @classmethod

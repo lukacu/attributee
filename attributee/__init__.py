@@ -61,9 +61,9 @@ def is_instance_or_subclass(val, class_) -> bool:
 class Attribute(object):
 
     def __init__(self, default=Undefined(), description="", readonly=False):
-        self._default = default if is_undefined(default) else (None if default is None else self.coerce(default, CoerceContext()))
-        self._description = description
         self._readonly = readonly
+        self._description = description
+        self._default = default if is_undefined(default) else (None if default is None else self.coerce(default, CoerceContext()))
 
     def coerce(self, value, context: Optional[CoerceContext] = None):
         return value

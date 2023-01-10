@@ -1,6 +1,11 @@
 
 
-from collections import Iterable, Mapping, Sequence
+
+try:
+    # Python 3.10 changes
+    from collections.abc import Iterable, Mapping, Sequence
+except ImportError:
+    from collections import Iterable, Mapping, Sequence
 
 from attributee import Attribute, AttributeException, CoerceContext
 

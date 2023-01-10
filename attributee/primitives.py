@@ -1,8 +1,13 @@
 
 import inspect
 import typing
-from collections import Mapping
 from enum import Enum
+
+try:
+    # Python 3.10 changes
+    from collections.abc import Mapping
+except ImportError:
+    from collections import Mapping
 
 from attributee import Attribute, AttributeException
 

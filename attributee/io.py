@@ -1,10 +1,10 @@
 
 import os
-import sys
 import typing
-import collections
 import argparse
 from functools import partial
+
+from collections import OrderedDict
 
 from attributee import Attributee, AttributeException, Include, is_undefined, Boolean, Nested
 
@@ -40,7 +40,7 @@ try:
             pass
         def construct_mapping(loader, node):
             loader.flatten_mapping(node)
-            return collections.OrderedDict(loader.construct_pairs(node))
+            return OrderedDict(loader.construct_pairs(node))
         OrderedLoader.add_constructor(
             yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
             construct_mapping)
@@ -53,7 +53,7 @@ try:
             return dumper.represent_mapping(
                 yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
                 data.items())
-        OrderedDumper.add_representer(collections.OrderedDict, _dict_representer)
+        OrderedDumper.add_representer(OrderedDict, _dict_representer)
         return yaml.dump(data, stream, OrderedDumper, **kwds)
 
     dump_yaml = partial(_dump_serialized, dumper=_yaml_dump)
@@ -72,7 +72,7 @@ except ImportError:
 import json
 
 dump_json = partial(_dump_serialized, dumper=partial(json.dump))
-load_json = partial(_load_serialized, loader=partial(json.load, object_pairs_hook=collections.OrderedDict))
+load_json = partial(_load_serialized, loader=partial(json.load, object_pairs_hook=OrderedDict))
 
 
 

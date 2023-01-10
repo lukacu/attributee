@@ -3,7 +3,13 @@ import inspect
 
 from typing import Any, Optional, Type, Union
 
-from collections import Mapping, OrderedDict
+try:
+    # Python 3.10 changes
+    from collections.abc import Mapping
+except ImportError:
+    from collections import Mapping
+
+from collections import OrderedDict
 
 class AttributeException(Exception):
     pass

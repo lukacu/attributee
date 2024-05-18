@@ -111,6 +111,38 @@ class String(Attribute):
     def transformer(self):
         return self._transformer
 
+class URL(String):
+
+    def coerce(self, value, ctx):
+        from urllib.parse import urlparse 
+        value = super().coerce(value, ctx)
+        try:
+            return urlparse(value)
+        except ValueError as ve:
+            raise AttributeException("Unable to parse URL") from ve
+
+    def dump(self, value):
+        from urllib.parse import urlunparse
+        return urlunparse(value)
+
+class Pattern(String):
+
+    def coerce(self, value, ctx):
+        from re import Pattern, compile
+        value = super().coerce(value, ctx)
+        if value is None:
+            return None
+        if isinstance(value, Pattern):
+            return value
+        value = to_string(value)
+        return compile(value)
+
+    def dump(self, value):
+        if value is None:
+            return None
+
+        return value.pattern
+
 class Enumeration(Attribute):
 
     def __init__(self, options,  **kwargs):
@@ -148,4 +180,4 @@ class Enumeration(Attribute):
         elif isinstance(self._mapping, typing.Mapping):
             return ReadonlyMapping(self._mapping) 
 
-__all__ = ["String", "Boolean", "Integer", "Float", "Enumeration", "Number"]
+__all__ = ["String", "Boolean", "Integer", "Float", "Enumeration", "Number", "URL", "Pattern"]

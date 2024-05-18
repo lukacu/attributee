@@ -341,6 +341,6 @@ class Unclaimed(Collector):
                 claimed.add(aname)
         return {k: v for k, v in kwargs.items() if k not in claimed}
 
-from attributee.primitives import Integer, Float, String, Boolean, Enumeration, Primitive, Number
+from attributee.primitives import Integer, Float, String, Boolean, Enumeration, Primitive, Number, URL, Pattern
 from attributee.object import Object, Callable, Date, Datetime
 from attributee.containers import List, Map, Tuple

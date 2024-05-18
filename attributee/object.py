@@ -6,10 +6,14 @@ from typing import Mapping
 from attributee import Attributee, Attribute, AttributeException
 
 def import_class(classpath):
+    import importlib
     delimiter = classpath.rfind(".")
     classname = classpath[delimiter+1:len(classpath)]
     module = __import__(classpath[0:delimiter], globals(), locals(), [classname])
-    return getattr(module, classname)
+    try:
+        return getattr(module, classname)
+    except AttributeError:
+        raise ImportError(module, name=classname)
 
 def class_fullname(o):
     return class_string(o.__class__)
@@ -40,7 +44,10 @@ class Object(Attribute):
 
     def __init__(self, resolver=default_object_resolver, subclass=None, **kwargs):
         super().__init__(**kwargs)
-        if subclass is not None and not inspect.isclass(subclass): raise AttributeException("Subclass constraint should be a class type")
+        if subclass is not None:
+            if isinstance(subclass, str):
+                subclass = import_class(subclass)
+            if not inspect.isclass(subclass): raise AttributeException("Subclass constraint should be a class type")
         self._resolver = resolver
         self._subclass = subclass
 

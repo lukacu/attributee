@@ -1,13 +1,14 @@
+Attributee
+----------
 
-About
------
+[![PyPI package version](https://badge.fury.io/py/attributee.svg)](https://badge.fury.io/py/attributee)
 
 Attributee is a Python 3 library for declarative object initialization. Input arguments are defined as class attributes and are automatically processed when creating an object. It is in a way similar to Django ORM or some other ORMs, but the main purpose of this library is to simplify parsing input arguments to object constructors. 
 
 The library is a work-in-progress, I am adding stuff that I consider useful for my other projects.
 
 Simple use case
----------------
+===============
 
 ```
 from attributee import Attributee, String, Float
@@ -32,16 +33,16 @@ model2 = Model(value1=10, value2="5")
 ```
 
 Documentation
--------------
+=============
 
 I am working on it.
 
 Authors
--------
+=======
 
 Luka Čehovin Zajc
 
 License
--------
+=======
 
 The library is available under the [simplified BSD license](LICENSE.md).

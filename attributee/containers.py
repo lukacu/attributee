@@ -114,6 +114,9 @@ class Tuple(Attribute):
         raise NotImplementedError
 
     def dump(self, value):
+        if value is None and self.default is None:
+            return None
+        
         return tuple([t.dump(x) for x, t in zip(value, self._types)])
 
     @property
@@ -155,6 +158,9 @@ class List(Attribute):
         raise NotImplementedError
 
     def dump(self, value):
+        if value is None and self.default is None:
+            return None
+        
         return [self._contains.dump(x) for x in value]
 
     @property
@@ -194,6 +200,9 @@ class Map(Attribute):
         raise NotImplementedError
 
     def dump(self, value):
+        if value is None and self.default is None:
+            return None
+        
         return {k: self._contains.dump(v) for k, v in value.items()}
 
     @property

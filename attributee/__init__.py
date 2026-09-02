@@ -11,6 +11,12 @@ except ImportError:
 
 from collections import OrderedDict
 
+try:
+    from typing import dataclass_transform as dataclass
+except ImportError:
+    def dataclass(cls):
+        return cls
+
 class AttributeException(Exception):
     pass
 
@@ -159,7 +165,7 @@ class Nested(Attribute):
         # This is only here to avoid pylint errors for the actual attribute field
         super().__setattr__(name, value)
 
-
+@dataclass
 class AttributeeMeta(type):
 
     @staticmethod

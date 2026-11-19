@@ -1,11 +1,16 @@
 
+import typing
 import unittest
 
-from attributee import AttributeException, Attributee, Include, Nested, Unclaimed
+from attributee import AttributeException, Attributee, AttributeeMeta, Include, Nested, Unclaimed
 from attributee.containers import List, Map
 from attributee.primitives import Integer
 
 class Tests(unittest.TestCase):
+
+    def test_dataclass_transform_metadata(self):
+        if hasattr(typing, "dataclass_transform"):
+            self.assertTrue(hasattr(AttributeeMeta, "__dataclass_transform__"))
 
     def test_nested(self):
         

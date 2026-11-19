@@ -2,10 +2,25 @@ Attributee
 ----------
 
 [![PyPI package version](https://badge.fury.io/py/attributee.svg)](https://badge.fury.io/py/attributee)
+[![CI](https://github.com/lukacu/attributee/actions/workflows/ci.yml/badge.svg)](https://github.com/lukacu/attributee/actions/workflows/ci.yml)
 
-Attributee is a Python 3 library for declarative object initialization. Input arguments are defined as class attributes and are automatically processed when creating an object. It is in a way similar to Django ORM or some other ORMs, but the main purpose of this library is to simplify parsing input arguments to object constructors. 
+Attributee is a Python library for declarative object initialization. Input
+arguments are defined as class attributes and automatically processed when an
+object is created. It is useful for small configuration and data-model classes
+where validation, defaults, and nested values should be declared alongside the
+class definition.
 
-The library is a work-in-progress, I am adding stuff that I consider useful for my other projects.
+The library is deliberately small and evolves around practical configuration
+and data-modeling needs.
+
+Installation
+============
+
+Install the latest release from PyPI:
+
+```
+python -m pip install attributee
+```
 
 Simple use case
 ===============
@@ -30,6 +45,32 @@ model1 = Model(value1=10)
 # automatic type conversion where possible
 model2 = Model(value1=10, value2="5")
 
+```
+
+Declared attributes can provide defaults, type conversion, validation, and
+read-only behavior. The package also includes nested models, containers,
+serialization helpers, and additional primitive types.
+
+Supported Python versions
+=========================
+
+Attributee supports Python 3.6 and newer. Continuous integration currently
+tests Python 3.9 through 3.12.
+
+Development
+===========
+
+Run the test suite from a checkout with:
+
+```
+python -m unittest attributee.tests -v
+```
+
+Build distributions locally with:
+
+```
+python -m pip install build
+python -m build
 ```
 
 Documentation
